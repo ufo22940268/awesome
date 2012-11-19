@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 
-THEMEDIR="/home/demian/.config/awesome/themes/niceandclean"
+THEMEDIR="/home/hongbosb/.config/awesome/themes/niceandclean"
 
 case "$1" in
 	1920)	killall conky
