@@ -42,7 +42,10 @@ end
 -- Themes define colours, icons, and wallpapers
 --beautiful.init("/usr/share/awesome/themes/default/theme.lua")
 --beautiful.init(awful.util.getdir("config") .. "/themes/niceandclean/theme.lua")
-beautiful.init(awful.util.getdir("config") .. "/themes/default/theme.lua")
+--
+beautiful.init(awful.util.getdir("config") .. "/themes/dust/theme.lua")
+--beautiful.init(awful.util.getdir("config") .. "/themes/default/theme.lua")
+--beautiful.init(awful.util.getdir("config") .. "/themes/sky/theme.lua")
 
 -- This is used later as the default terminal and editor to run.
 terminal = "urxvt"
@@ -74,15 +77,15 @@ layouts =
 }
 -- }}}
 
-
 -- {{{ Tags
 -- Define a tag table which hold all screen tags.
 tags = {}
 for s = 1, screen.count() do
     -- Each screen has its own tag table.
-    tags[s] = awful.tag({ "browser", "urvxt", 3, "xiami", 5, 6, 7, 8, 9}, s, layouts[2])
+    tags[s] = awful.tag({ "browser", "urxvt", "emulator", "gimp", "pdf",  "xiami", 7, 8, 9}, s, layouts[2])
 end
 -- }}}
+
 
 -- {{{ Menu
 -- Create a laucher widget and a main menu
@@ -110,6 +113,19 @@ mytextclock = awful.widget.textclock({ align = "right" })
 -- Create a systray
 mysystray = widget({ type = "systray" })
 
+-- Initialize widget
+mpdwidget = widget({ type = "textbox" })
+-- Register widget
+vicious.register(mpdwidget, vicious.widgets.mpd,
+    function (widget, args)
+        if args["{state}"] == "Stop" then 
+            return " - "
+        else 
+            return args["{Artist}"]..' - '.. args["{Title}"]
+        end
+    end, 10)
+
+
 -- Create a wibox for each screen and add it
 mywibox = {}
 mypromptbox = {}
@@ -127,7 +143,7 @@ mytasklist = {}
 mytasklist.buttons = awful.util.table.join(
                      awful.button({ }, 1, function (c)
                                               if c == client.focus then
-                                                  c.minimized = true
+                                                  --c.minimized = true
                                               else
                                                   if not c:isvisible() then
                                                       awful.tag.viewonly(c:tags()[1])
@@ -188,6 +204,7 @@ for s = 1, screen.count() do
         mylayoutbox[s],
         mytextclock,
         s == 1 and mysystray or nil,
+        mpdwidget,
         mytasklist[s],
         layout = awful.widget.layout.horizontal.rightleft
     }
@@ -206,10 +223,8 @@ root.buttons(awful.util.table.join(
 globalkeys = awful.util.table.join(
     awful.key({            }, "#123",function () awful.util.spawn("amixer -q sset Master 5+", false) end),
     awful.key({            }, "#122",function () awful.util.spawn("amixer -q sset Master 5-", false) end),
-    awful.key({ modkey,           }, "Left",   awful.tag.viewprev       ),
-    awful.key({ modkey,           }, "Right",  awful.tag.viewnext       ),
+    awful.key({            }, "#107",function () awful.util.spawn("scrot -s", false) end),
     awful.key({ modkey,           }, "Escape", awful.tag.history.restore),
-
     awful.key({ modkey,           }, "j",
         function ()
             awful.client.focus.byidx( 1)
@@ -241,11 +256,23 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey, "Control" }, "r", awesome.restart),
     awful.key({ modkey, "Shift"   }, "q", awesome.quit),
 
-    awful.key({ modkey,           }, "l",     function () awful.tag.incmwfact( 0.05)    end),
+    --awful.key({ modkey }, "l",          function () awful.tag.incmwfact( 0.05) end),
+    --awful.key({ modkey }, "h",          function () awful.tag.incmwfact(-0.05) end),
+    --awful.key({ modkey, "Shift" }, "l", function () awful.client.incwfact(-0.05) end),
+    --awful.key({ modkey, "Shift" }, "h", function () awful.client.incwfact( 0.05) end),
+
+    awful.key({ modkey }, "Next",  function () awful.client.moveresize( 20,  20, -40, -40) end),
+   awful.key({ modkey }, "Prior", function () awful.client.moveresize(-20, -20,  40,  40) end),
+   awful.key({ modkey }, "Down",  function () awful.client.moveresize(  0,  20,   0,   0) end),
+   awful.key({ modkey }, "Up",    function () awful.client.moveresize(  0, -20,   0,   0) end),
+   awful.key({ modkey }, "Left",  function () awful.client.moveresize(-20,   0,   0,   0) end),
+   awful.key({ modkey }, "Right", function () awful.client.moveresize( 20,   0,   0,   0) end),
+
+    awful.key({ modkey,           }, "l",     function () awful.tag.incmwfact( 0.05);  end),
     awful.key({ modkey,           }, "h",     function () awful.tag.incmwfact(-0.05)    end),
     awful.key({ modkey, "Shift"   }, "h",     function () awful.tag.incnmaster( 1)      end),
     awful.key({ modkey, "Shift"   }, "l",     function () awful.tag.incnmaster(-1)      end),
-    awful.key({ modkey, "Control" }, "h",     function () awful.tag.incncol( 1)         end),
+    awful.key({ modkey, "Control" }, "h",     function () awful.tag.incncol( 1) print("incncol");         end),
     awful.key({ modkey, "Control" }, "l",     function () awful.tag.incncol(-1)         end),
     awful.key({ modkey,           }, "space", function () awful.layout.inc(layouts,  1) end),
     awful.key({ modkey, "Shift"   }, "space", function () awful.layout.inc(layouts, -1) end),
@@ -348,9 +375,10 @@ awful.rules.rules = {
       properties = { floating = true } },
     { rule = { class = "gimp" },
       properties = { floating = true } },
-    -- Set Firefox to always map on tags number 2 of screen 1.
-    -- { rule = { class = "Firefox" },
-    --   properties = { tag = tags[1][2] } },
+     { rule = { class = "Chromium" },
+       properties = { tag = tags[1][1], maximized_vertical = true, maximized_horizontal = true, } },
+     { rule = { class = "URxvt" },
+       properties = { tag = tags[1][2] } },
 }
 -- }}}
 
@@ -381,8 +409,10 @@ client.add_signal("manage", function (c, startup)
     end
 end)
 
+
 client.add_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 client.add_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
+--
 --
 --
