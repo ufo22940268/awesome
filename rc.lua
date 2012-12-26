@@ -310,6 +310,9 @@ end
 
 -- {{{ Key bindings
 globalkeys = awful.util.table.join(
+    awful.key({ modkey,             }, "z",function ()
+        -- test function.
+    end),
     awful.key({ modkey,             }, "s",function ()
         awful.util.spawn("urxvt -title \"ccheng@compiler-server\" -e ssh ccheng@192.168.120.248")
     end),
@@ -320,10 +323,12 @@ globalkeys = awful.util.table.join(
 
     awful.key({ modkey, "Control",            }, "s",function ()
         scheduleTerminals(MODE_SHEDULE_SERVER)
+        tags[1][ACTIVE_TAG_INDEX].name = "server"
     end),
 
     awful.key({ modkey, "Control",            }, "c",function ()
         scheduleTerminals(MODE_SHEDULE_CLIENT)
+        tags[1][ACTIVE_TAG_INDEX].name = "client"
     end),
 
     awful.key({ modkey, "Control",            }, "o",function () awful.util.spawn("nautilus", false); awful.client.focus(3) end),
