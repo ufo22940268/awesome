@@ -11,6 +11,8 @@ require("naughty")
 -- Load Debian menu entries
 require("debian.menu")
 
+--require("obvious.temp_info")
+
 vicious = require("vicious")
 
 -- {{{ Error handling
@@ -63,9 +65,9 @@ modkey = "Mod4"
 layouts =
 {
     awful.layout.suit.floating,
-    awful.layout.suit.tile,
+    --awful.layout.suit.tile,
     --awful.layout.suit.tile.left,
-    --awful.layout.suit.tile.bottom,
+    awful.layout.suit.tile.bottom,
     --awful.layout.suit.tile.top,
     --awful.layout.suit.fair,
     --awful.layout.suit.fair.horizontal,
@@ -82,7 +84,7 @@ layouts =
 tags = {}
 for s = 1, screen.count() do
     -- Each screen has its own tag table.
-    tags[s] = awful.tag({ "browser", "urxvt", "emulator", "gimp", "pdf",  "xiami", 7, 8, 9}, s, layouts[2])
+    tags[s] = awful.tag({ "browser", "active", "3", "4", "pdf",  "naultilus", 7, "client", "server"}, s, layouts[2])
 end
 -- }}}
 
@@ -199,6 +201,7 @@ for s = 1, screen.count() do
             mylauncher,
             mytaglist[s],
             mypromptbox[s],
+            --obvious.temp_info(),
             layout = awful.widget.layout.horizontal.leftright
         },
         mylayoutbox[s],
@@ -218,9 +221,115 @@ root.buttons(awful.util.table.join(
     awful.button({ }, 5, awful.tag.viewprev)
 ))
 -- }}}
+--
+--
+
+ACTIVE_TAG_INDEX = 2
+CLIENT_TAG_INDEX = 8
+SERVER_TAG_INDEX = 9
+
+MODE_SHEDULE_SERVER = 0
+MODE_SHEDULE_CLIENT = 1
+
+TYPE_SERVER = 0
+TYPE_CLIENT = 1
+
+function moveClients(fromTagIndex, toTagIndex)
+    local fromTags = tags[1][fromTagIndex];
+    for i=1, #fromTags:clients() do
+        awful.client.movetotag(tags[1][toTagIndex], fromTags:clients()[i])
+    end
+end 
+
+
+function isCompileServer(title)
+    if string.find(title, "compiler") == nil then
+        return false
+    else
+        return true
+    end
+end
+
+function containsServerTerminal(tagIndex)
+    clients = tags[1][tagIndex]:clients()
+    for i = 1, #clients do
+        local title = clients[i].name
+        if isCompileServer(title) then
+            return true
+        end
+    end
+    return false
+end
+
+function moveToActive(client)
+    awful.client.movetotag(tags[1][ACTIVE_TAG_INDEX], client)
+end
+
+function moveToServer(client)
+    awful.client.movetotag(tags[1][SERVER_TAG_INDEX], client)
+end
+
+function moveToClient(client)
+    awful.client.movetotag(tags[1][CLIENT_TAG_INDEX], client)
+end
+
+function getClientType(client)
+    if isCompileServer(client.name) then
+        return TYPE_SERVER
+    else
+        return TYPE_CLIENT
+    end
+end
+
+
+function scheduleClients(clients, mode)
+    for i = 1, #clients do
+        local c = clients[i]
+        local t = getClientType(c)
+        if (mode == MODE_SHEDULE_SERVER and t == TYPE_SERVER) 
+            or (mode == MODE_SHEDULE_CLIENT and t == TYPE_CLIENT) then
+            moveToActive(c)
+        else
+            if t == TYPE_SERVER then
+                moveToServer(c)
+            else
+                moveToClient(c)
+            end
+        end
+    end
+end
+
+function scheduleTerminals(mode)
+    local serverClients = tags[1][SERVER_TAG_INDEX]:clients()
+    local clientClients = tags[1][CLIENT_TAG_INDEX]:clients()
+    local activeClients = tags[1][ACTIVE_TAG_INDEX]:clients()
+    scheduleClients(serverClients, mode);
+    scheduleClients(clientClients, mode);
+    scheduleClients(activeClients, mode);
+end
 
 -- {{{ Key bindings
 globalkeys = awful.util.table.join(
+    awful.key({ modkey,             }, "s",function ()
+        awful.util.spawn("urxvt -title \"ccheng@compiler-server\" -e ssh ccheng@192.168.120.248")
+    end),
+
+    awful.key({ modkey, "Control",            }, "a",function ()
+        scheduleActiveTag();
+    end),
+
+    awful.key({ modkey, "Control",            }, "s",function ()
+        scheduleTerminals(MODE_SHEDULE_SERVER)
+    end),
+
+    awful.key({ modkey, "Control",            }, "c",function ()
+        scheduleTerminals(MODE_SHEDULE_CLIENT)
+    end),
+
+    awful.key({ modkey, "Control",            }, "o",function () awful.util.spawn("nautilus", false); awful.client.focus(3) end),
+    awful.key({ modkey, "Control",            }, "f",function () awful.util.spawn("mpc next", false) end),
+    awful.key({ modkey, "Control",            }, "b",function () awful.util.spawn("mpc prev", false) end),
+    awful.key({ modkey, "Control",            }, "p",function () awful.util.spawn("mpc toggle", false) end),
     awful.key({            }, "#123",function () awful.util.spawn("amixer -q sset Master 5+", false) end),
     awful.key({            }, "#122",function () awful.util.spawn("amixer -q sset Master 5-", false) end),
     awful.key({            }, "#107",function () awful.util.spawn("scrot -s", false) end),
@@ -255,11 +364,6 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey,           }, "Return", function () awful.util.spawn(terminal) end),
     awful.key({ modkey, "Control" }, "r", awesome.restart),
     awful.key({ modkey, "Shift"   }, "q", awesome.quit),
-
-    --awful.key({ modkey }, "l",          function () awful.tag.incmwfact( 0.05) end),
-    --awful.key({ modkey }, "h",          function () awful.tag.incmwfact(-0.05) end),
-    --awful.key({ modkey, "Shift" }, "l", function () awful.client.incwfact(-0.05) end),
-    --awful.key({ modkey, "Shift" }, "h", function () awful.client.incwfact( 0.05) end),
 
     awful.key({ modkey }, "Next",  function () awful.client.moveresize( 20,  20, -40, -40) end),
    awful.key({ modkey }, "Prior", function () awful.client.moveresize(-20, -20,  40,  40) end),
@@ -377,8 +481,14 @@ awful.rules.rules = {
       properties = { floating = true } },
      { rule = { class = "Chromium" },
        properties = { tag = tags[1][1], maximized_vertical = true, maximized_horizontal = true, } },
-     { rule = { class = "URxvt" },
-       properties = { tag = tags[1][2] } },
+     --{ rule = { class = "URxvt" },
+       --properties = { tag = tags[1][2] } },
+     { rule = { class = "Xpdf" },
+       properties = { tag = tags[1][5], maximized_vertical = true, maximized_horizontal = true, } },
+     { rule = { class = "Nautilus" },
+       properties = { tag = tags[1][6] } },
+     { rule = { class = "Dalvic" },
+       properties = { tag = tags[1][3] } },
 }
 -- }}}
 
