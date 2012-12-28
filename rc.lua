@@ -7,7 +7,7 @@ require("beautiful")
 -- Notification library
 require("naughty")
 
-
+--
 -- Load Debian menu entries
 require("debian.menu")
 
