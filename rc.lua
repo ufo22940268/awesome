@@ -65,28 +65,37 @@ modkey = "Mod4"
 layouts =
 {
     awful.layout.suit.floating,
-    --awful.layout.suit.tile,
-    --awful.layout.suit.tile.left,
+    awful.layout.suit.tile,
+    awful.layout.suit.tile.left,
     awful.layout.suit.tile.bottom,
-    --awful.layout.suit.tile.top,
-    --awful.layout.suit.fair,
-    --awful.layout.suit.fair.horizontal,
-    --awful.layout.suit.spiral,
-    --awful.layout.suit.spiral.dwindle,
-    --awful.layout.suit.max,
-    --awful.layout.suit.max.fullscreen,
-    --awful.layout.suit.magnifier
+    awful.layout.suit.tile.top,
+    awful.layout.suit.fair,
+    awful.layout.suit.fair.horizontal,
+    awful.layout.suit.spiral,
+    awful.layout.suit.spiral.dwindle,
+    awful.layout.suit.max,
+    awful.layout.suit.max.fullscreen,
+    awful.layout.suit.magnifier
+}
+
+layouts2 =
+{
+    awful.layout.suit.tile,
 }
 -- }}}
 
--- {{{ Tags
--- Define a tag table which hold all screen tags.
-tags = {}
-for s = 1, screen.count() do
-    -- Each screen has its own tag table.
-    tags[s] = awful.tag({ "browser", "active", "3", "4", "pdf",  "naultilus", 7, "client", "server"}, s, layouts[2])
-end
--- }}}
+ -- {{{ Tags
+ -- Define a tag table which will hold all screen tags.
+ tags = {
+   names  = { "browser", "active", "emulator", "pdf", "5",  "naultilus", "transmission", "client", "server"},
+   layout = { layouts[1], layouts[4], layouts[1], layouts[1], layouts[1],
+              layouts[1], layouts[1], layouts[1], layouts[1]
+ }}
+ for s = 1, screen.count() do
+     -- Each screen has its own tag table.
+     tags[s] = awful.tag(tags.names, s, tags.layout)
+ end
+ -- }}}
 
 
 -- {{{ Menu
@@ -95,7 +104,8 @@ myawesomemenu = {
    { "manual", terminal .. " -e man awesome" },
    { "edit config", editor_cmd .. " " .. awesome.conffile },
    { "restart", awesome.restart },
-   { "quit", awesome.quit }
+   { "quit", awesome.quit },
+   { "test", function() awful.client.swap.bydirection("up") end}
 }
 
 mymainmenu = awful.menu({ items = { { "awesome", myawesomemenu, beautiful.awesome_icon },
@@ -308,6 +318,11 @@ function scheduleTerminals(mode)
     scheduleClients(activeClients, mode);
 end
 
+function resumeFocusWindowsSize()
+    client.focus.maximized_horizontal = false
+    client.focus.maximized_vertical   = false
+end
+
 -- {{{ Key bindings
 globalkeys = awful.util.table.join(
     awful.key({ modkey,             }, "z",function ()
@@ -341,11 +356,13 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey,           }, "Escape", awful.tag.history.restore),
     awful.key({ modkey,           }, "j",
         function ()
+            resumeFocusWindowsSize()
             awful.client.focus.byidx( 1)
             if client.focus then client.focus:raise() end
         end),
     awful.key({ modkey,           }, "k",
         function ()
+            resumeFocusWindowsSize()
             awful.client.focus.byidx(-1)
             if client.focus then client.focus:raise() end
         end),
@@ -489,7 +506,7 @@ awful.rules.rules = {
      --{ rule = { class = "URxvt" },
        --properties = { tag = tags[1][2] } },
      { rule = { class = "Xpdf" },
-       properties = { tag = tags[1][5], maximized_vertical = true, maximized_horizontal = true, } },
+       properties = { tag = tags[1][4], maximized_vertical = true, maximized_horizontal = true, } },
      { rule = { class = "Nautilus" },
        properties = { tag = tags[1][6] } },
      { rule = { class = "Dalvic" },
