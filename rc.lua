@@ -341,11 +341,13 @@ globalkeys = awful.util.table.join(
 
     awful.key({ modkey,           }, "j",
         function ()
+            resumeFocusWindowsSize()
             awful.client.focus.byidx( 1)
             if client.focus then client.focus:raise() end
         end),
     awful.key({ modkey,           }, "k",
         function ()
+            resumeFocusWindowsSize()
             awful.client.focus.byidx(-1)
             if client.focus then client.focus:raise() end
         end),
