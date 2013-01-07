@@ -27,7 +27,7 @@ end
 -- Handle runtime errors after startup
 do
     local in_error = false
-    awesome.add_signal("debug::error", function (err)
+    awesome.connect_signal("debug::error", function (err)
         -- Make sure we don't go into an endless error loop
         if in_error then return end
         in_error = true
@@ -87,8 +87,8 @@ layouts2 =
  -- {{{ Tags
  -- Define a tag table which will hold all screen tags.
  tags = {
-   names  = { "browser", "active", "emulator", "pdf", "5",  "naultilus", "transmission", "client", "server"},
-   layout = { layouts[1], layouts[4], layouts[1], layouts[1], layouts[1],
+   names  = { "browser", "active", "emulator", "naultilus", "gimp",  "pdf", "transmission", "client", "server"},
+   layout = { layouts[1], layouts[8], layouts[1], layouts[1], layouts[1],
               layouts[1], layouts[1], layouts[1], layouts[1]
  }}
  for s = 1, screen.count() do
@@ -499,16 +499,16 @@ awful.rules.rules = {
       properties = { floating = true } },
     { rule = { class = "pinentry" },
       properties = { floating = true } },
-    { rule = { class = "gimp" },
-      properties = { floating = true } },
+    { rule = { class = "Gimp" },
+      properties = { floating = true, tag = tags[1][5] } },
      { rule = { class = "Chromium" },
        properties = { tag = tags[1][1], maximized_vertical = true, maximized_horizontal = true, } },
      --{ rule = { class = "URxvt" },
        --properties = { tag = tags[1][2] } },
      { rule = { class = "Xpdf" },
-       properties = { tag = tags[1][4], maximized_vertical = true, maximized_horizontal = true, } },
+       properties = { tag = tags[1][6], maximized_vertical = true, maximized_horizontal = true, } },
      { rule = { class = "Nautilus" },
-       properties = { tag = tags[1][6] } },
+       properties = { tag = tags[1][4] } },
      { rule = { class = "Dalvic" },
        properties = { tag = tags[1][3] } },
 }
@@ -516,12 +516,12 @@ awful.rules.rules = {
 
 -- {{{ Signals
 -- Signal function to execute when a new client appears.
-client.add_signal("manage", function (c, startup)
+client.connect_signal("manage", function (c, startup)
     -- Add a titlebar
     -- awful.titlebar.add(c, { modkey = modkey })
 
     -- Enable sloppy focus
-    c:add_signal("mouse::enter", function(c)
+    c:connect_signal("mouse::enter", function(c)
         if awful.layout.get(c.screen) ~= awful.layout.suit.magnifier
             and awful.client.focus.filter(c) then
             client.focus = c
@@ -542,8 +542,8 @@ client.add_signal("manage", function (c, startup)
 end)
 
 
-client.add_signal("focus", function(c) c.border_color = beautiful.border_focus end)
-client.add_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
+client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
+client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
 --
 --
