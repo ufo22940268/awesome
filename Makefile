@@ -1,2 +1,2 @@
 all:
-	python unread.py
+	echo "success!"

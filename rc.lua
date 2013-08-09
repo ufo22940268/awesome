@@ -10,6 +10,8 @@ local beautiful = require("beautiful")
 -- Notification library
 local naughty = require("naughty")
 local menubar = require("menubar")
+vicious = require("vicious")
+print("adfijaif");
 
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
@@ -42,7 +44,7 @@ end
 beautiful.init("/usr/share/awesome/themes/zenburn/theme.lua")
 
 -- This is used later as the default terminal and editor to run.
-terminal = "urxvt"
+terminal = "terminator"
 editor = os.getenv("EDITOR") or "nano"
 editor_cmd = terminal .. " -e " .. editor
 
@@ -82,9 +84,8 @@ end
  -- {{{ Tags
  -- Define a tag table which will hold all screen tags.
  tags = {
-   names  = { "browser", "active", "emulator", "naultilus", "gimp",  "pdf", "transmission", "client", "server"},
-   layout = { layouts[1], layouts[8], layouts[1], layouts[1], layouts[1],
-              layouts[1], layouts[1], layouts[1], layouts[1]
+   names  = { "browser", "active", "51zhangdan", "pidgin", "office&gimp&nautilus", "pdf", "transmission", "client", "server"},
+   layout = { layouts[10], layouts[5], layouts[8], layouts[1], layouts[12], layouts[1], layouts[1], layouts[1], layouts[1]
  }}
  for s = 1, screen.count() do
      -- Each screen has its own tag table.
@@ -218,6 +219,7 @@ root.buttons(awful.util.table.join(
 ACTIVE_TAG_INDEX = 2
 CLIENT_TAG_INDEX = 8
 SERVER_TAG_INDEX = 9
+TEMP_TAG_INDEX = 7
 
 MODE_SHEDULE_SERVER = 0
 MODE_SHEDULE_CLIENT = 1
@@ -234,7 +236,7 @@ end
 
 
 function isCompileServer(title)
-    if string.find(title, "compiler") == nil then
+    if string.find(title, "server") == nil then
         return false
     else
         return true
@@ -290,6 +292,14 @@ function scheduleClients(clients, mode)
     end
 end
 
+function moveAll(from, to)
+    local clients = tags[1][from]:clients();
+    for i = 1, #clients do
+        local c = clients[i]
+        awful.client.movetotag(tags[1][to], c)
+    end
+end
+
 function scheduleTerminals(mode)
     local serverClients = tags[1][SERVER_TAG_INDEX]:clients()
     local clientClients = tags[1][CLIENT_TAG_INDEX]:clients()
@@ -311,7 +321,7 @@ globalkeys = awful.util.table.join(
         -- test function.
     end),
     awful.key({ modkey,             }, "s",function ()
-        awful.util.spawn("urxvt -title \"ccheng@compiler-server\" -e ssh ccheng@192.168.120.248")
+        awful.util.spawn("terminator --title \"server\" -x ssh root@192.168.2.79")
     end),
 
     awful.key({ modkey, "Control",            }, "a",function ()
@@ -328,30 +338,36 @@ globalkeys = awful.util.table.join(
         tags[1][ACTIVE_TAG_INDEX].name = "client"
     end),
 
+    awful.key({ modkey, "Control",            }, "w",function ()
+        moveAll(2, TEMP_TAG_INDEX);
+        moveAll(3, 2);
+        moveAll(TEMP_TAG_INDEX, 3);
+    end),
+
     awful.key({ modkey, "Control",            }, "o",function () awful.util.spawn("nautilus", false); awful.client.focus(3) end),
     awful.key({ modkey, "Control",            }, "f",function () awful.util.spawn("mpc next", false) end),
     awful.key({ modkey, "Control",            }, "b",function () awful.util.spawn("mpc prev", false) end),
     awful.key({ modkey, "Control",            }, "p",function () awful.util.spawn("mpc toggle", false) end),
     awful.key({            }, "#123",function () awful.util.spawn("amixer -q sset Master 5+", false) end),
     awful.key({            }, "#122",function () awful.util.spawn("amixer -q sset Master 5-", false) end),
-    awful.key({            }, "#107",function () awful.util.spawn("scrot -s", false) end),
+    awful.key({            }, "#107", function () awful.util.spawn("bash /home/ccheng/.config/awesome/capscr") end),
     awful.key({ modkey,           }, "Left",   awful.tag.viewprev       ),
     awful.key({ modkey,           }, "Right",  awful.tag.viewnext       ),
     awful.key({ modkey,           }, "Escape", awful.tag.history.restore),
 
     awful.key({ modkey,           }, "j",
         function ()
-            resumeFocusWindowsSize()
+            --resumeFocusWindowsSize()
             awful.client.focus.byidx( 1)
             if client.focus then client.focus:raise() end
         end),
     awful.key({ modkey,           }, "k",
         function ()
-            resumeFocusWindowsSize()
+            --resumeFocusWindowsSize()
             awful.client.focus.byidx(-1)
             if client.focus then client.focus:raise() end
         end),
-    awful.key({ modkey,           }, "w", function () mymainmenu:show() end),
+    awful.key({ modkey,           }, "w", function () awful.util.spawn("pkill -f image_filter", false)  end),
 
     -- Layout manipulation
     awful.key({ modkey, "Shift"   }, "j", function () awful.client.swap.byidx(  1)    end),
@@ -416,6 +432,7 @@ clientkeys = awful.util.table.join(
             c.maximized_vertical   = not c.maximized_vertical
         end)
 )
+
 
 -- Compute the maximum number of digit we need, limited to 9
 keynumber = 0
@@ -487,7 +504,13 @@ awful.rules.rules = {
      { rule = { class = "Xpdf" },
        properties = { tag = tags[1][6], maximized_vertical = true, maximized_horizontal = true, } },
      { rule = { class = "Nautilus" },
+       properties = { tag = tags[1][5] } },
+     { rule = { class = "Libreoffice" },
+       properties = { tag = tags[1][5] } },
+     { rule = { class = "Pidgin" },
        properties = { tag = tags[1][4] } },
+     { rule = { class = "Chromium" },
+       properties = { tag = tags[1][1] } },
      { rule = { class = "Dalvic" },
        properties = { tag = tags[1][3] } },
 }
@@ -555,6 +578,13 @@ client.connect_signal("manage", function (c, startup)
     end
 end)
 
+
 client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
+--
+awful.util.spawn_with_shell("/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1")
+awful.util.spawn_with_shell("run_once nm-applet")
+awful.util.spawn_with_shell("run_once pidgin")
+awful.util.spawn_with_shell("run_once chromium")
+awful.util.spawn_with_shell("run_once mpd")
